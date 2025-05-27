@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+#fontcount {
+    display: block;
+    height: 1px;
+    width: 1px;
+    white-space: nowrap;
+    overflow: visible;
+    font-size: x-small;
+}
+#helptext {
+    position: absolute;
+    display: none;
+    z-index: 10;
+    border-radius: 8px;
+    border: solid 3px black;
+    background-color: lightgray;
+    width: 90%;
+    height: 90%;
+    padding: 1em;
+    overflow-y: scroll;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+#helptext button {
+    float: right;
+}
+html {
+    font-family: sans-serif;
+    background-color: lightblue;
+}
+table {
+    border: solid 1px black;
+}
+th {
+    text-align: right;
+}
+.lbl {
+    font-weight: bold;
+}
+</style>
+
+<!-- XXXX_PLACEHOLDER_XXXX -->
+
+<script type='text/javascript'>
+// ALL_FONTS will have been defined by the pre-processor, and contain all font names.
+const HASH_FONTS = []
+const CHAR_FONTS = []
+const ENCODE_FONTS = []
+const BOX_FONTS = []
+
+
+let CUR_FONTS = []
+let USER_MSG = ''
+
+const ASCII_SYMS =
+`ABCDEFGHIJKLMNOPQRSTUVWXYZ
+abcdefghijklmnopqrstuvwxyz
+0123456789
+ !"#$%&'()<>[]{}/\\
+*+,-.:;=?@|^_~\`
+`
+
+function gId(id) {
+    return document.getElementById(id)
+}
+
+function isHashFont(letr) {
+    return (letr.split('\n').join('').replaceAll(' ', '').replaceAll('#', '').length == 0)
+}
+
+function setFontCount() {
+    gId('fontcount').innerText = '(' + ALL_FONTS.length + ' fonts)'
+}
+
+function onchangefont(fontname) {
+
+    const options = {
+        font: fontname,
+        horizontalLayout: gId('horzspc').value,
+        verticalLayout: gId('vertspc').value,
+        width: parseInt(gId('width').value) || 80,
+        whitespaceBreak: gId('wsbreak').checked,
+     }
+
+    let messageText = gId('msg').value
+
+    const data = figlet.textSync(messageText, options)
+
+    gId('meta').innerText = ''
+    let txt = "Fontname: " + fontname + "\n\n" + data + "\n\n"
+
+    if (gId('showmeta').checked) {
+        figlet.metadata(fontname, (alwaysNullVal, opts, comment) => {
+            txt += comment + "\n"
+        })
+    }
+
+    return txt
+}
+
+function setFigletText(txt) {
+    gId('figlettxt').innerText = txt    
+}
+
+function getFigletStyle() {
+   return gId('figlettxt').style
+}
+
+function updateFiglet() {
+    setFigletText(onchangefont(gId('fontnames').value))
+}
+
+function showallfonts() {
+    gId('meta').innerText = ''
+    let txt = ''
+    for (const fnt of CUR_FONTS) {
+        txt += onchangefont(fnt)
+        txt += '='.repeat(100) + '\n'
+    }
+    setFigletText(txt)
+}
+
+function showallchars() {
+    const fontname = gId('fontnames').value
+    const fnt = figlet.figFonts[fontname]
+    let dat = ''
+    const keys = Object.keys(fnt)
+    for (const key of keys) {
+        if (parseInt(key)) {
+            dat += key + ' (' + String.fromCharCode(key) + ')\n'
+            dat += fnt[key].join('\n') + '\n'
+            dat += '='.repeat(40) + '\n'
+        }
+    }
+    setFigletText(dat)
+}
+
+function asciiChars() {
+    let msg = gId('msg')
+    if (gId('allsyms').checked) {
+        USER_MSG = msg.value
+        msg.value = ASCII_SYMS
+    } else {
+        msg.value = USER_MSG
+    }
+    updateFiglet()
+}
+
+function selectFontGroup() {
+    const val = gId('fonttype').value
+    if (val == 'charfonts') return CHAR_FONTS
+    if (val == 'hashfonts') return HASH_FONTS
+    if (val == 'encodefonts') return ENCODE_FONTS
+    if (val == 'boxfonts') return BOX_FONTS
+    return ALL_FONTS
+}
+
+function updateFontlist() {
+    CUR_FONTS = selectFontGroup()
+
+    const sel = gId('fontnames')
+    sel.innerHTML = ''
+    for (k of CUR_FONTS) {
+        const opt = document.createElement('option')
+        opt.innerText = k
+        opt.value = k
+        sel.appendChild(opt)
+    }
+    updateFiglet()
+}
+
+function updateLetterSep() {
+    const val = parseFloat(gId('lettersep').value)
+    const sty = getFigletStyle()
+    if (val) {
+        sty.letterSpacing = val + 'em'
+    } else {
+        sty.letterSpacing = 0
+    }
+    updateFiglet()
+}
+
+function updateLineHgt() {
+    const val = parseFloat(gId('linehgt').value)
+    const sty = getFigletStyle()
+    if (val) {
+        sty.lineHeight = val
+    } else {
+        sty.lineHeight = 1
+    }
+    updateFiglet()
+}
+
+function updatedisplayfont() {
+    getFigletStyle().fontFamily = gId('displayfont').value
+    updateFiglet()
+}
+
+function showHelp() {
+    gId('helptext').style.display='block'
+}
+
+function hideHelp() {
+    gId('helptext').style.display='none'
+}
+
+function initBoxFonts() {
+    const boxFontCandidates = [
+        'bear',
+        'bubble',
+        'cards',
+        'digital',
+        'keyboard',
+        'puzzle',
+        'pyramid',
+        'smkeyboard',
+    ]
+    for (const fontname of boxFontCandidates) {
+        if (ALL_FONTS.includes(fontname)) {
+            BOX_FONTS.push(fontname)
+        }
+    }
+}
+
+function initEncodeFonts() {
+    const encodeFontCandidates = [
+        'binary',
+        'DANC4',
+        'decimal',
+        'dwhistled',
+        'eftichess',
+        'eftiwall',
+        'hex',
+        'katakana',
+        'morse',
+        'morse2',
+        'octal',
+        'rot13',
+        'runyc',
+        'term',
+        'tsalagi',
+    ]
+    for (const fontname of encodeFontCandidates) {
+        if (ALL_FONTS.includes(fontname)) {
+            ENCODE_FONTS.push(fontname)
+        }
+    }
+}
+
+function populateFontGroups() {
+
+    initBoxFonts()
+    initEncodeFonts()
+
+    for (var fnt of Object.keys(figlet.figFonts)) {
+        const capA = figlet.textSync('A', {font: fnt})
+        if (isHashFont(capA)) {
+            HASH_FONTS.push(fnt)
+        } else if (!ENCODE_FONTS.includes(fnt) && !BOX_FONTS.includes(fnt)) {
+            CHAR_FONTS.push(fnt)
+        }
+    }
+}
+
+function init() {
+
+    setFontCount()
+
+    figlet.preloadFonts(ALL_FONTS).then(() => {
+        populateFontGroups()
+        updateFontlist()
+
+        updateLetterSep()
+        updateLineHgt()
+        updatedisplayfont()
+    })
+
+}
+</script>
+</head>
+<body onload='init()'>
+
+<div id='helptext'>
+    <button onclick='hideHelp()'>Close</button><br>
+    <p>
+        This app generates text using
+        <a href='http://www.figlet.org/examples.html'>Figlet fonts</a>.
+        Figlet fonts are composed of (typically) ASCII characters which are
+        combined in specific ways to form larger stylized letters.
+    </p>
+
+    <p>
+        <span class='lbl'>Message:</span> The text to generate using the Figlet font.<br>
+
+        <span class='lbl'>Font group:</span> Groupings of Figlet fonts.
+        <i>All Fonts</i> - Every Figlet font included in this app.
+        <i>Box Fonts</i> - A normal letter surrounded by some form of decoration.
+        <i>Encode Fonts</i> - Fonts where some form of encoding is applied.
+        <i>Hash Fonts</i> - Fonts that use only the '#' character.
+        <i>Char Fonts</i> - All fonts that do not fall under previously mentioned groups.<br>
+
+        <span class='lbl'>Figlet font:</span> The Figlet font which will be used
+        to generate the Message text.<br>
+
+        <span class='lbl'>Horz space:</span> A Figlet setting which controls
+        horizontal spacing.<br>
+
+        <span class='lbl'>Vert space:</span> A Figlet setting which controls
+        vertical spacing.<br>
+
+        <span class='lbl'>Line width:</span> Maximum line width. Figlet letters
+        that exceed this width will be wrapped. The default value is 80.<br>
+
+        <span class='lbl'>Word break:</span> Enable wrapping the Message text at word boundaries.<br>
+
+        <span class='lbl'>Comments:</span> Show comments about the Figlet font.
+        This can sometimes be useful to explain what the font does. (e.g. 'DANC4')<br>
+
+        <span class='lbl'>ASCII chars:</span> Change the Message text to all
+        visible ASCII characters, plus the space character (ASCII chars 32-126).<br>
+    </p>
+
+    <p>
+        <span class='lbl'>Show all chars:</span> Show all characters that are
+        defined for the currently selected Figlet font.<br>
+
+        <span class='lbl'>Show all fonts:</span> Generate the Message text using
+        every Figlet font in the current Font group.<br>
+    </p>
+
+    <p>
+        The <i>(Font)</i>, <i>LnHgt</i>, and <i>ChSep</i> are browser settings
+        and affect how the browser renders the Figlet text. Changing these may
+        improve the legibility of some Figlet fonts and may make other Figlet
+        fonts look worse.
+    </p>
+
+    <p>
+        <span class='lbl'>(Font):</span> The browser font that will be used to
+        display the text generated by the Figlet font. The listed fonts may not
+        be available on every system.<br>
+
+        <span class='lbl'>LnHgt:</span> Changes the line height. The default
+        value is 1 and can be changed in (e.g.) +/-0.1 increments.<br>
+
+        <span class='lbl'>ChSep:</span> Changes the separation between each
+        character. The default value is 0 and can be changed in (e.g.) +/-0.1
+        increments.<br>
+    </p>
+</div>
+
+<table>
+    <tr>
+        <th>Message</th>
+        <td><textarea id='msg' onkeyup='updateFiglet()'>FIGLET</textarea></td>
+    </tr>
+    <tr>
+        <th>Font group</th>
+        <td><select id='fonttype' onchange='updateFontlist()'>
+            <option value='allfonts'>All Fonts</option>
+            <option value='boxfonts'>Box Fonts</option>
+            <option value='charfonts'>Char Fonts</option>
+            <option value='hashfonts'>Hash Fonts</option>
+            <option value='encodefonts'>Encode Fonts</option>
+        </select></td>
+    </tr>
+    <tr>
+        <th>Figlet font</th>
+        <td><select id='fontnames' onchange='updateFiglet()'></select></td>
+    </tr>
+    <tr>
+        <th>Horz space</th>
+        <td><select id='horzspc' onchange='updateFiglet()'>
+            <option value='default'>Default</option>
+            <option value='full'>Full</option>
+            <option value='fitted'>Fitted</option>
+            <option value='controlled smushing'>Smush (C)</option>
+            <option value='universal smushing'>Smush (U)</option>
+        </select></td>
+    </tr>
+    <tr>
+        <th>Vert space</th>
+        <td><select id='vertspc' onchange='updateFiglet()'>
+            <option value='default'>Default</option>
+            <option value='full'>Full</option>
+            <option value='fitted'>Fitted</option>
+            <option value='controlled smushing'>Smush (C)</option>
+            <option value='universal smushing'>Smush (U)</option>
+        </select></td>
+    </tr>
+    <tr>
+        <th>Line width</th>
+        <td><input id='width' type='textbox' size=3 onkeyup='updateFiglet()'></input></td>
+    </tr>
+    <tr>
+        <th>Word break</th>
+        <td><input id='wsbreak' type='checkbox' onchange='updateFiglet()'></input></td>
+    </tr>
+    <tr>
+        <th>Comments</th>
+        <td><input id='showmeta' type='checkbox' onchange='updateFiglet()'></input></td>
+    </tr>
+    <tr>
+        <th>ASCII chars</th>
+        <td><input id='allsyms' type='checkbox' onchange='asciiChars()'></input></td>
+    </tr>
+    <tr>
+        <td colspan=2 style='text-align: center'>
+            <button onclick='showallchars()'>Show all chars</button>
+            <button onclick='showallfonts()'>Show all fonts</button>
+        </td>
+    </tr>
+    <tr>
+        <td colspan=2>
+            <select id='displayfont' onchange='updatedisplayfont()'>
+                <option value='monospace'>monospace</option>
+                <option value='Courier New'>Courier New</option>
+                <option value='DejaVu Sans Mono'>DejaVu Sans Mono</option>
+                <option value='FreeMono'>FreeMono</option>
+                <option value='Liberation Mono'>Liberation Mono</option>
+                <option value='Nimbus Mono'>Nimbus Mono</option>
+                <option value='Noto Mono'>Noto Mono</option>
+            </select>
+            <input id='linehgt' type='textbox' size=3 onkeyup='updateLineHgt()' placeholder='LnHgt'></input>
+            <input id='lettersep' type='textbox' size=3 onkeyup='updateLetterSep()' placeholder='ChSep'></input>
+        </td>
+    </tr>
+
+    <tr style='background-color: #ddd'>
+        <td colspan=2 style='font-size: small; text-align: center;'>
+            <span id='fontcount'></span>
+            <a href='#' onclick='showHelp(); return false;'>Help</a>
+        </td>
+    </tr>
+</table>
+ 
+
+<pre id='figlettxt'>
+</pre>
+
+<pre id='meta'>
+</pre>
+
+
+</body>
+</html>
